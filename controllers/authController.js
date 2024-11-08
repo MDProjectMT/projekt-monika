@@ -1,7 +1,6 @@
 import Joi from "joi";
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
-import { token } from "morgan";
 
 const schemaUser = Joi.object({
   username: Joi.string(),
@@ -64,9 +63,9 @@ export const login = async (req, res, next) => {
     if (passwordIsCorrect) {
       const payload = { id: user._id };
       const token = jwt.sign(payload, process.env.SECRET, { expiresIn: "12h" });
-      //   const refreshToken = jwt.sign(payload, process.env.SECRET, {
-      //     expiresIn: "30d",
-      //   });
+      const refreshToken = jwt.sign(payload, process.env.SECRET, {
+        expiresIn: "30d",
+      });
       await user.setToken(token);
       await user.save();
 
@@ -75,7 +74,7 @@ export const login = async (req, res, next) => {
         code: 200,
         message: "Log in successfull",
         token,
-        // refreshToken,
+        refreshToken,
         user: {
           email: user.email,
           _id: user._id,
@@ -100,10 +99,55 @@ export const logout = async (req, res, next) => {
 
     user.token = null;
     await user.save();
+
     return res.status(200).json({
       status: "204 No Content - User is log out",
     });
   } catch (error) {
+    console.error(`Server error: ${error.message}`);
     next(error);
   }
+};
+
+export const refresh = async (req, res) => {
+  const refreshToken = req.headers.authorization;
+  if (!refreshToken) {
+    return res.status(401).json({
+      status: "Refresh token is required",
+    });
+  }
+
+  const splitToken = refreshToken.split(" ")[1];
+
+  jwt.verify(
+    splitToken,
+    process.env.REFRESH_SECRET,
+    async (error, decodedToken) => {
+      if (error) {
+        return res.status(403).json({
+          status: "Invalid refresh",
+        });
+      }
+      const user = User.findOne({ _id: decodedToken.id });
+
+      if (!user) {
+        return res.status(403).json({
+          status: "User not found",
+        });
+      }
+
+      const payload = { id: user._id };
+
+      const accessToken = jwt.sign(payload, process.env.SECRET, {
+        expiresIn: "6h",
+      });
+      const newRefreshToken = jwt.sign(payload, process.env.REFRESH_SECRET, {
+        expiresIn: "30d",
+      });
+      return res.status(200).json({
+        token: accessToken,
+        refreshToken: newRefreshToken,
+      });
+    }
+  );
 };

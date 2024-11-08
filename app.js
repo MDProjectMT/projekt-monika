@@ -4,6 +4,8 @@ import cookieParser from "cookie-parser";
 import morgan from "morgan";
 import helmet from "helmet";
 import authRoutes from "./routes/authRoutes.js";
+import passport from "passport";
+import jwtStrategy from "./config/jwtStrategy.js";
 
 const app = express();
 
@@ -16,6 +18,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan(loggerFormat));
 app.use(helmet());
+app.use(passport.initialize());
+
+jwtStrategy();
 
 app.use("/api/auth", authRoutes);
 
