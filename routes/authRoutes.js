@@ -3,7 +3,7 @@ import {
   register,
   login,
   logout,
-  refresh,
+  // refresh,
 } from "../controllers/authController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 
@@ -12,6 +12,6 @@ const router = express.Router();
 router.post("/register", register);
 router.post("/login", login);
 router.post("/logout", authMiddleware, logout);
-router.post("/refresh", refresh);
+// router.post("/refresh", refresh);
 
 export default router;

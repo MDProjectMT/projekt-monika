@@ -1,8 +1,8 @@
 import passport from "passport";
-import { ExtractJwt, Strategy as jwtStrategy } from "passport-jwt";
-import User from "../models/User";
+import { ExtractJwt, Strategy } from "passport-jwt";
+import User from "../models/User.js";
 
-function setJwtStrategy() {
+function setJwtStartegy() {
   const secret = process.env.SECRET;
   const params = {
     secretOrKey: secret,
@@ -10,20 +10,21 @@ function setJwtStrategy() {
   };
 
   passport.use(
-    new jwtStrategy(params, async function (payload, done) {
+    new Strategy(params, async function (payload, done) {
       try {
-        const user = await User.findById(payload.id).lean();
+        const user = await User.findById(payload._id).lean();
         if (!user) {
           return done(null, false, { message: "User not found" });
         }
         return done(null, user);
       } catch (error) {
-        return done(error, false);
+        return;
       }
     })
   );
 }
-export default setJwtStrategy;
+
+export default setJwtStartegy;
 
 //{ ExtractJwt, Strategy as JWTStrategy }: Importujemy funkcję ExtractJwt i Strategy z biblioteki passport-jwt. ExtractJwt wyciąga token z żądania, a Strategy (przemianowana tutaj na JWTStrategy) definiuje strategię autoryzacji za pomocą tokenu.
 
